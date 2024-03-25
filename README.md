@@ -19,3 +19,11 @@ Configure as follows:
 5. You should see an `output` folder with the `exe` file inside 
 
 Once done, you can execute exe file as administrator to run ransomware.  
+
+To enable remote server, ensure that firewall for both Virtual Machine and local machine are set to off
+<img width="691" alt="image" src="https://github.com/S3annnyyy/CS440-Ransomware/assets/67400060/78861387-5dee-4a6c-bc2e-e55add3f2299">
+
+Once turned off run the following command:
+```
+python server.py
+```
