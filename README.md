@@ -27,3 +27,9 @@ Once turned off run the following command:
 ```
 python server.py
 ```
+## Configuring IP Address
+On your command prompt run the following command:
+```
+ipconfig
+```
+Configure IP_ADDRESS based `Ethernet adapter VMware Network Adapter VMnet8:` for both `koufu.py` and `server.py`  
