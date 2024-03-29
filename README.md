@@ -8,7 +8,7 @@ Project component of SMU CS440 module where our team was taked to  implement a r
 
 
 ## Installation
-Ensure that you have `python 3.10.0` or higher, `tkinter`, `Pillow`, `auto-py-to-exe` installed
+Ensure that you have `python 3.10.0` or higher, `tkinter`, `Pillow`, `auto-py-to-exe`, `psutil`, `rsa` installed
 ```
 pip install <required libraries>
 ```
@@ -37,3 +37,18 @@ On your command prompt run the following command:
 ipconfig
 ```
 Configure IP_ADDRESS based `Ethernet adapter VMware Network Adapter VMnet8:` for both `koufu.py` and `server.py`  
+
+## Generating & storing public.pem and private.pem
+```
+import rsa
+import os
+import sys
+
+pubKey, priKey = rsa.newkeys(1024)
+
+with open("public.pem", "wb") as f:
+    f.write(pubKey.save_pkcs1("PEM"))
+
+with open("private.pem", "wb") as f:
+    f.write(priKey.save_pkcs1("PEM"))
+```
