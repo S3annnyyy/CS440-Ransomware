@@ -3,6 +3,10 @@ Project component of SMU CS440 module where our team was taked to  implement a r
 
 ### This Ransomware musn't be used to harm/threat/hurt other person's computer. It's purpose is only to share knowledge and awareness about Malware/Cryptography/Operating Systems/Programming. This ransomware made for learning and awareness about security/cryptography.
 
+# Workflow
+![image](https://github.com/S3annnyyy/CS440-Ransomware/assets/67400060/02fc601b-4ae9-4e30-b7b4-50d6535887f5)
+
+
 ## Installation
 Ensure that you have `python 3.10.0` or higher, `tkinter`, `Pillow`, `auto-py-to-exe` installed
 ```
