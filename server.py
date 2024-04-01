@@ -2,8 +2,7 @@ import socket
 import rsa
 import threading
 
-IP_ADDRESS = '192.168.50.113'
-IP_ADDRESS_SMU = '192.168.126.1'
+IP_ADDRESS = '192.168.126.1'
 PORT = 3000
 
 with open("private.pem", "rb") as f:
@@ -37,7 +36,7 @@ def handle_connection(connection, address):
 def start_server():
     print("Creating socket...")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((IP_ADDRESS_SMU, PORT))
+        s.bind((IP_ADDRESS, PORT))
         print("Socket created, listening for connections...")
         s.listen(5)
         while True:

