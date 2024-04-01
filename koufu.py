@@ -362,7 +362,7 @@ def receive_message(s):
             
             print(f"Received message from server: {data}")
             # Create a message popup using the Form class
-            key = data.split("b")[-1]
+            key = data.split("b'")[-1]
             main.create_message_popup(key)
         except Exception as e:
             print(f"Error receiving message: {e}")
